@@ -61,6 +61,45 @@ function startWatcher(node) {
 
 function requestCertificates(data) {
   var configurationPairs = extractDomainEmailPairs(data);
+
+  for (var i = 0; i < configurationPairs.length; i++) {
+      var virtualHost = configurationPairs[i].SSL_VIRTUAL_HOST;
+      var email = configurationPairs[i].SSL_EMAIL;
+        // Check in-memory cache of certificates for the named domain
+        le.check({ domains: [virtualHost] }).then(function (results) {
+          if (results) {
+            // we already have certificates
+            return;
+          }
+
+
+          // Register Certificate manually
+          le.register({
+
+            domains:  [virtualHost]                         // CHANGE TO YOUR DOMAIN (list for SANS)
+          , email: email
+          , agreeTos:  true                                           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
+          , rsaKeySize: 2048                                        // 2048 or higher
+          , challengeType: 'http-01'                                // http-01, tls-sni-01, or dns-01
+
+          }).then(function (results) {
+
+            console.log('success');
+
+          }, function (err) {
+
+            // Note: you must either use le.middleware() with express,
+            // manually use le.challenges['http-01'].get(opts, domain, key, val, done)
+            // or have a webserver running and responding
+            // to /.well-known/acme-challenge at `webrootPath`
+            console.error('[Error]: node-letsencrypt/examples/standalone');
+            console.error(err.stack);
+
+          });
+
+        });
+
+  }
 }
 
 /**
@@ -102,3 +141,8 @@ function extractDomainEmailPairs(data) {
 
 var app = express();
 app.use('/', le.middleware());
+
+
+app.listen(54321, function () {
+    console.log('Example app listening on port 3000!')
+})
