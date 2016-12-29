@@ -21,6 +21,7 @@
     "le-challenge-fs": "^2.0.8",
     "le-sni-auto": "^2.1.0",
     "le-store-certbot": "^2.0.3",
-    "letsencrypt": "^2.1.8"
+    "letsencrypt": "^2.1.8",
+    "underscore": "^1.8.3"
   }
 }

@@ -1,3 +1,4 @@
+var _                = require('underscore');
 var config           = require('config');
 var LE               = require('letsencrypt');
 var consulHost       = config.get('consul.host');
@@ -60,6 +61,27 @@ function startWatcher(node) {
 
 function requestCertificates(data) {
   console.log(data);
+  var configurationPairs = extractDomainEmailPairs(data);
+}
+
+function extractDomainEmailPairs(data) {
+  var groupedServices = _.groupBy(data, 'Service');
+
+  var result;
+
+  for (var i = 0; i < groupedServices.length; i++) {
+    var pair;
+
+    for (var j = 0; j < groupedServices[i].Tags.length; j++) {
+      var kV = groupedServices[i].Tags[j].split('=');
+      if (kV[0] && kV[0] === 'SSL_VIRTUAL_HOST'){
+        pair['SSL_VIRTUAL_HOST'] = kV[1];
+      }
+      if (kV[0] && kV[0] === 'SSL_EMAIL'){
+        pair['SSL_EMAIL'] = kV[1];
+      }
+    }
+  }
 }
 
 var app = express();
