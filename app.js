@@ -60,28 +60,44 @@ function startWatcher(node) {
 
 
 function requestCertificates(data) {
-  console.log(data);
   var configurationPairs = extractDomainEmailPairs(data);
 }
 
+/**
+ * Convert services payload to key-value pairs with SSL_VIRTUAL_HOST and SSL_EMAIL
+ */
 function extractDomainEmailPairs(data) {
-  var groupedServices = _.groupBy(data, 'Service');
+  var groupedServices = _.indexBy(data.Services, 'Service');
 
-  var result;
+  // Hacky way to get object array
+  var result = [];
 
-  for (var i = 0; i < groupedServices.length; i++) {
-    var pair;
+  for (var property in groupedServices) {
+      if (groupedServices.hasOwnProperty(property)) {
+          var value = groupedServices[property];
+          var pair = [];
 
-    for (var j = 0; j < groupedServices[i].Tags.length; j++) {
-      var kV = groupedServices[i].Tags[j].split('=');
-      if (kV[0] && kV[0] === 'SSL_VIRTUAL_HOST'){
-        pair['SSL_VIRTUAL_HOST'] = kV[1];
+          if (value.Tags) {
+
+              for (var j = 0; j < value.Tags.length; j++) {
+                  var kV = value.Tags[j].split('=');
+                  if (kV[0] && kV[0] === 'SSL_VIRTUAL_HOST'){
+                      pair['SSL_VIRTUAL_HOST'] = kV[1];
+                  }
+                  if (kV[0] && kV[0] === 'SSL_EMAIL'){
+                      pair['SSL_EMAIL'] = kV[1];
+                  }
+              }
+
+              if (pair['SSL_VIRTUAL_HOST'] && pair['SSL_EMAIL']) {
+                  result.push(pair);
+              }
+          }
+
       }
-      if (kV[0] && kV[0] === 'SSL_EMAIL'){
-        pair['SSL_EMAIL'] = kV[1];
-      }
-    }
   }
+
+  return result;
 }
 
 var app = express();
