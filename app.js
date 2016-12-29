@@ -75,14 +75,13 @@ function requestCertificates(data) {
 
           // Register Certificate manually
           le.register({
-
-            domains:  [virtualHost]                         // CHANGE TO YOUR DOMAIN (list for SANS)
-          , email: email
-          , agreeTos:  true                                           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
-          , rsaKeySize: 2048                                        // 2048 or higher
-          , challengeType: 'http-01'                                // http-01, tls-sni-01, or dns-01
-
+            domains:  [virtualHost],                         // CHANGE TO YOUR DOMAIN (list for SANS)
+            email: email,
+            agreeTos:  true,                                           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
+            rsaKeySize: 2048,                                        // 2048 or higher
+            challengeType: 'http-01'                                // http-01, tls-sni-01, or dns-01
           }).then(function (results) {
+            console.log(results);
 
             console.log('success');
 
