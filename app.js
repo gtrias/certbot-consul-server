@@ -1,6 +1,7 @@
 var config           = require('config');
 var LE               = require('letsencrypt');
 var consulHost       = config.get('consul.host');
+var express          = require('express');
 var consul           = require('consul')({
     host: consulHost
 });
