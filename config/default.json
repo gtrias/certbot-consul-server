@@ -3,7 +3,10 @@
         "port": "80"
     },
     "letsencrypt": {
-        "server": "staging"
+        "server": "staging",
+        "loopbackPort": 80,
+        "webrootPath": "~/letsencrypt/var/",
+        "configDir": "~/letsencrypt/etc"
     },
     "consul": {
         "host": "127.0.0.1"
