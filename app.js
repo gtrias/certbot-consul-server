@@ -75,27 +75,24 @@ function requestCertificates(data) {
 
           // Register Certificate manually
           le.register({
-            domains:  [virtualHost],                         // CHANGE TO YOUR DOMAIN (list for SANS)
+            domains:  [virtualHost],   // CHANGE TO YOUR DOMAIN (list for SANS)
             email: email,
-            agreeTos:  true,                                           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
-            rsaKeySize: 2048,                                        // 2048 or higher
-            challengeType: 'http-01'                                // http-01, tls-sni-01, or dns-01
+            agreeTos:  true,           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
+            rsaKeySize: 2048,          // 2048 or higher
+            challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
           }).then(function (results) {
             console.log(results);
 
             console.log('success');
 
           }, function (err) {
-
             // Note: you must either use le.middleware() with express,
             // manually use le.challenges['http-01'].get(opts, domain, key, val, done)
             // or have a webserver running and responding
             // to /.well-known/acme-challenge at `webrootPath`
             console.error('[Error]: node-letsencrypt/examples/standalone');
             console.error(err.stack);
-
           });
-
         });
 
   }
