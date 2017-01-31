@@ -27,8 +27,14 @@ function leAgree(opts, agreeCb) {
   agreeCb(null, opts.tosUrl);
 }
 
+var server = LE.stagingServerUrl;
+
+if (config.get('letsencrypt.server') === 'production') {
+  server = LE.productionServerUrl;
+}
+
 le = LE.create({
-  server: LE.stagingServerUrl,                             // or LE.productionServerUrl
+  server: server,                                          // or LE.productionServerUrl
   store: leStore,                                          // handles saving of config, accounts, and certificates
   challenges: { 'http-01': leChallenge },                  // handles /.well-known/acme-challege keys and tokens
   challengeType: 'http-01',                                // default to this challenge type
