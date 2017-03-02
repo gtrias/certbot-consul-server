@@ -105,6 +105,15 @@ function requestCertificates(data) {
     // Check in-memory cache of certificates for the named domain
     le.check({ domains: [virtualHost] }).then(function (results) {
       if (results) {
+        // Ensure concatenation
+        concatFiles(virtualHost, function (err) {
+          if (err) {
+            console.log('[Error] Failed to concate files');
+          } else {
+            console.log('[Success] files concated succesfully');
+          }
+        });
+
         // we already have certificates
         return;
       }
@@ -118,13 +127,6 @@ function requestCertificates(data) {
         challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
       }).then(function (results) {
         console.log('[Success]: %j', results);
-        concatFiles(virtualHost, function (err) {
-          if (err) {
-            console.log('[Error] Failed to concate files');
-          } else {
-            console.log('[Success] files concated succesfully');
-          }
-        });
       }, function (err) {
         // Note: you must either use le.middleware() with express,
         // manually use le.challenges['http-01'].get(opts, domain, key, val, done)
