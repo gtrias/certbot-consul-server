@@ -127,6 +127,7 @@ function requestCertificates(data) {
         challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
       }).then(function (results) {
         console.log('[Success]: %j', results);
+
         concatFiles(virtualHost, function (err) {
           if (err) {
             console.log('[Error] Failed to concate files');
@@ -149,10 +150,10 @@ function requestCertificates(data) {
 }
 
 function concatFiles(virtualHost, cb) {
-  var certPath = '/certificates/etc/live/' + virtualHost + '/fullchain.pem';
-  var privPath = '/certificates/etc/live/' + virtualHost + '/privkey.pem';
+  var certPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost + '/fullchain.pem';
+  var privPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost + '/privkey.pem';
   if(fs.existsSync(certPath) && fs.existsSync(privPath) ) {
-    var dest = '/certificates/etc/live/' + virtualHost + '/haproxy.pem';
+    var dest = config.get('letsencrypt.configDir') + '/live/' + virtualHost + '/haproxy.pem';
     concat([
       certPath,
       privPath
@@ -184,14 +185,14 @@ function extractDomainEmailPairs(data) {
       for (var j = 0; j < node.ServiceTags.length; j++) {
           var kV = node.ServiceTags[j].split('=');
           if (kV[0] && kV[0] === 'SSL_VIRTUAL_HOST'){
-              pair['SSL_VIRTUAL_HOST'] = kV[1];
+              pair.SSL_VIRTUAL_HOST = kV[1];
           }
           if (kV[0] && kV[0] === 'SSL_EMAIL'){
-              pair['SSL_EMAIL'] = kV[1];
+              pair.SSL_EMAIL = kV[1];
           }
       }
 
-      if (pair['SSL_VIRTUAL_HOST'] && pair['SSL_EMAIL']) {
+      if (pair.SSL_VIRTUAL_HOST && pair.SSL_EMAIL) {
           result.push(pair);
       }
 
@@ -209,5 +210,5 @@ app.use('/', le.middleware());
 
 var port = 54321;
 app.listen(port, function () {
-  console.log('Example app listening on port %s!', port)
-})
+  console.log('Example app listening on port %s!', port);
+});
