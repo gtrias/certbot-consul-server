@@ -6,21 +6,29 @@ var consulHost       = config.get('consul.host');
 var async            = require('async');
 var concat           = require('concat-files');
 var fs               = require('fs');
+var winston          = require('winston');
+var debug            = config.get('letsencrypt.debug');
 var consul           = require('consul')({
     host: consulHost
+});
+
+var logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.Console)({timestamp : true})
+  ]
 });
 
 // Storage Backend
 var leStore = require('le-store-certbot').create({
   configDir: config.get('letsencrypt.configDir'),  // or /etc/letsencrypt or wherever
-  debug: false
+  debug: debug
 });
 
 
 // ACME Challenge Handlers
 var leChallenge = require('le-challenge-fs').create({
   webrootPath: config.get('letsencrypt.webrootPath'),     // or template string such as
-  debug: true                                            // '/srv/www/:hostname/.well-known/acme-challenge'
+  debug: debug
 });
 
 
@@ -42,12 +50,7 @@ le = LE.create({
   challengeType: 'http-01',                                // default to this challenge type
   loopbackPort: config.get('letsencrypt.loopbackPort'),
   agreeToTerms: leAgree,                                   // hook to allow user to view and accept LE TOS
-  debug: true,
-  log: function (debug) {
-    if (debug) {
-      console.log('[Debug] %j', debug);
-    }
-  } // handles debug outputs
+  debug: debug
 });
 
 // Getting consul agent nodename to start watcher
@@ -78,12 +81,12 @@ function startWatcher(node) {
         services.push({
           ID: key,
           nodes: result
-        })
+        });
 
         callback();
       });
     }, function (err) {
-      if (err) return console.log(err);
+      if (err) return logger.error(err);
 
       requestCertificates(services);
     });
@@ -91,7 +94,38 @@ function startWatcher(node) {
   });
 
   watch.on('error', function(err) {
-    console.log('error:', err);
+    logger.error('error:', err);
+  });
+}
+
+function registerCertificate(virtualHosts, email) {
+
+  // Register Certificate manually
+  le.register({
+    domains:  virtualHosts,   // CHANGE TO YOUR DOMAIN (list for SANS)
+    email: email,
+    agreeTos:  true,           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
+    rsaKeySize: 2048,          // 2048 or higher
+    challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
+  }).then(function (results) {
+    logger.info('[Success]: Successfull generated the next certificate: %j', results);
+
+    concatFiles(virtualHosts, function (err) {
+      if (err) {
+        logger.error('[Error] Failed to concate files, err %j', err);
+      } else {
+        logger.info('[Success] files concated succesfully');
+      }
+    });
+
+
+  }, function (err) {
+    // Note: you must either use le.middleware() with express,
+    // manually use le.challenges['http-01'].get(opts, domain, key, val, done)
+    // or have a webserver running and responding
+    // to /.well-known/acme-challenge at `webrootPath`
+
+    logger.error('[Error]: Error registering certificate %j %j', virtualHosts, err);
   });
 }
 
@@ -103,67 +137,31 @@ function requestCertificates(data) {
     var email = configurationPairs[i].SSL_EMAIL;
 
     // Check in-memory cache of certificates for the named domain
-    le.check({ domains: [virtualHost] }).then(function (results) {
-      if (results) {
-        // Ensure concatenation
-        concatFiles(virtualHost, function (err) {
-          if (err) {
-            console.log('[Error] Failed to concate files');
-          } else {
-            console.log('[Success] files concated succesfully');
-          }
-        });
-
-        // we already have certificates
-        return;
-      }
-
-      // Register Certificate manually
-      le.register({
-        domains:  [virtualHost],   // CHANGE TO YOUR DOMAIN (list for SANS)
-        email: email,
-        agreeTos:  true,           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
-        rsaKeySize: 2048,          // 2048 or higher
-        challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
-      }).then(function (results) {
-        console.log('[Success]: %j', results);
-
-        concatFiles(virtualHost, function (err) {
-          if (err) {
-            console.log('[Error] Failed to concate files');
-          } else {
-            console.log('[Success] files concated succesfully');
-          }
-        });
-
-
-      }, function (err) {
-        // Note: you must either use le.middleware() with express,
-        // manually use le.challenges['http-01'].get(opts, domain, key, val, done)
-        // or have a webserver running and responding
-        // to /.well-known/acme-challenge at `webrootPath`
-
-        console.error('[Error]: %j', err);
-      });
-    });
+    le.check({ domains: virtualHost }).then(
+      registerCertificate(virtualHost, email)
+    );
   }
 }
 
 function concatFiles(virtualHost, cb) {
-  var certPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost + '/fullchain.pem';
-  var privPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost + '/privkey.pem';
+  var certPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/fullchain.pem';
+  var privPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/privkey.pem';
+  console.log(certPath);
+  console.log(privPath);
   if(fs.existsSync(certPath) && fs.existsSync(privPath) ) {
-    var dest = config.get('letsencrypt.configDir') + '/live/' + virtualHost + '/haproxy.pem';
+    var dest = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/' + virtualHost[0] + '.pem';
     concat([
       certPath,
       privPath
     ], dest, function (err) {
       if (err) return cb(err);
 
-      console.log("successfully created");
+      logger.info("cert and priv successfully concated");
 
       return cb(null);
     });
+  } else {
+    cb({error: "The generated certificates cannot be found"});
   }
 }
 
@@ -177,38 +175,40 @@ function extractDomainEmailPairs(data) {
 
   data.forEach(function (element) {
 
-  element.nodes.forEach(function (node) {
+    element.nodes.forEach(function (node) {
+      var pair = [];
+      pair.SSL_VIRTUAL_HOST = [];
 
-    var pair = [];
-    if (node.ServiceTags) {
+      if (node.ServiceTags) {
 
-      for (var j = 0; j < node.ServiceTags.length; j++) {
+        for (var j = 0; j < node.ServiceTags.length; j++) {
           var kV = node.ServiceTags[j].split('=');
+
+
           if (kV[0] && kV[0] === 'SSL_VIRTUAL_HOST'){
-              pair.SSL_VIRTUAL_HOST = kV[1];
+            pair.SSL_VIRTUAL_HOST.push( kV[1]);
           }
           if (kV[0] && kV[0] === 'SSL_EMAIL'){
-              pair.SSL_EMAIL = kV[1];
+            pair.SSL_EMAIL = kV[1];
           }
-      }
+        }
 
-      if (pair.SSL_VIRTUAL_HOST && pair.SSL_EMAIL) {
+        if (pair.SSL_VIRTUAL_HOST.length && pair.SSL_EMAIL) {
           result.push(pair);
+        }
       }
-
-    }
+    });
 
   });
-
-});
 
   return result;
 }
 
+// Configuring express.js to manage .well-known requests
 var app = express();
 app.use('/', le.middleware());
 
 var port = 54321;
 app.listen(port, function () {
-  console.log('Example app listening on port %s!', port);
+  logger.info('Example app listening on port %s!', port);
 });
