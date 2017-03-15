@@ -98,21 +98,21 @@ function startWatcher(node) {
   });
 }
 
-function registerCertificate(results, virtualHost, email) {
+function registerCertificate(virtualHosts, email) {
 
   // Register Certificate manually
   le.register({
-    domains:  virtualHost,   // CHANGE TO YOUR DOMAIN (list for SANS)
+    domains:  virtualHosts,   // CHANGE TO YOUR DOMAIN (list for SANS)
     email: email,
     agreeTos:  true,           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
     rsaKeySize: 2048,          // 2048 or higher
     challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
   }).then(function (results) {
-    logger.info('[Success]: %j', results);
+    logger.info('[Success]: Successfull generated the next certificate: %j', results);
 
-    concatFiles(virtualHost, function (err) {
+    concatFiles(virtualHosts, function (err) {
       if (err) {
-        logger.error('[Error] Failed to concate files');
+        logger.error('[Error] Failed to concate files, err %j', err);
       } else {
         logger.info('[Success] files concated succesfully');
       }
@@ -125,7 +125,7 @@ function registerCertificate(results, virtualHost, email) {
     // or have a webserver running and responding
     // to /.well-known/acme-challenge at `webrootPath`
 
-    logger.error('[Error]: %j', err);
+    logger.error('[Error]: Error registering certificate %j %j', virtualHosts, err);
   });
 }
 
@@ -146,8 +146,10 @@ function requestCertificates(data) {
 function concatFiles(virtualHost, cb) {
   var certPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/fullchain.pem';
   var privPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/privkey.pem';
+  console.log(certPath);
+  console.log(privPath);
   if(fs.existsSync(certPath) && fs.existsSync(privPath) ) {
-    var dest = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/haproxy.pem';
+    var dest = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/' + virtualHost[0] + '.pem';
     concat([
       certPath,
       privPath
@@ -158,6 +160,8 @@ function concatFiles(virtualHost, cb) {
 
       return cb(null);
     });
+  } else {
+    cb({error: "The generated certificates cannot be found"});
   }
 }
 
@@ -200,6 +204,7 @@ function extractDomainEmailPairs(data) {
   return result;
 }
 
+// Configuring express.js to manage .well-known requests
 var app = express();
 app.use('/', le.middleware());
 

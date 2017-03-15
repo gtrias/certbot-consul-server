@@ -6,8 +6,8 @@
         "server": "staging",
         "debug": false,
         "loopbackPort": 81,
-        "webrootPath": "~/letsencrypt/var/",
-        "configDir": "~/letsencrypt/etc"
+        "webrootPath": "./dump/letsencrypt/var/",
+        "configDir": "./dump/letsencrypt/etc"
     },
     "consul": {
         "host": "127.0.0.1"
