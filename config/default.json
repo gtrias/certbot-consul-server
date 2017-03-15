@@ -4,6 +4,7 @@
     },
     "letsencrypt": {
         "server": "staging",
+        "debug": false,
         "loopbackPort": 81,
         "webrootPath": "~/letsencrypt/var/",
         "configDir": "~/letsencrypt/etc"

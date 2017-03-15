@@ -7,6 +7,7 @@ var async            = require('async');
 var concat           = require('concat-files');
 var fs               = require('fs');
 var winston          = require('winston');
+var debug            = config.get('letsencrypt.debug');
 var consul           = require('consul')({
     host: consulHost
 });
@@ -20,14 +21,14 @@ var logger = new (winston.Logger)({
 // Storage Backend
 var leStore = require('le-store-certbot').create({
   configDir: config.get('letsencrypt.configDir'),  // or /etc/letsencrypt or wherever
-  debug: false
+  debug: debug
 });
 
 
 // ACME Challenge Handlers
 var leChallenge = require('le-challenge-fs').create({
   webrootPath: config.get('letsencrypt.webrootPath'),     // or template string such as
-  debug: true                                            // '/srv/www/:hostname/.well-known/acme-challenge'
+  debug: debug
 });
 
 
@@ -49,12 +50,7 @@ le = LE.create({
   challengeType: 'http-01',                                // default to this challenge type
   loopbackPort: config.get('letsencrypt.loopbackPort'),
   agreeToTerms: leAgree,                                   // hook to allow user to view and accept LE TOS
-  debug: true,
-  log: function (debug) {
-    if (debug) {
-      logger.info('[Debug] %j', debug);
-    }
-  } // handles debug outputs
+  debug: debug
 });
 
 // Getting consul agent nodename to start watcher
@@ -103,19 +99,6 @@ function startWatcher(node) {
 }
 
 function registerCertificate(results, virtualHost, email) {
-  if (results) {
-    // Ensure concatenation
-    concatFiles(virtualHost, function (err) {
-      if (err) {
-        logger.error('[Error] Failed to concate files');
-      } else {
-        logger.error('[Success] files concated succesfully');
-      }
-    });
-
-    // we already have certificates
-    return;
-  }
 
   // Register Certificate manually
   le.register({
@@ -155,7 +138,7 @@ function requestCertificates(data) {
 
     // Check in-memory cache of certificates for the named domain
     le.check({ domains: virtualHost }).then(
-      registerCertificate(results, virtualHost, email)
+      registerCertificate(virtualHost, email)
     );
   }
 }
@@ -190,11 +173,13 @@ function extractDomainEmailPairs(data) {
 
     element.nodes.forEach(function (node) {
       var pair = [];
+      pair.SSL_VIRTUAL_HOST = [];
 
       if (node.ServiceTags) {
 
         for (var j = 0; j < node.ServiceTags.length; j++) {
           var kV = node.ServiceTags[j].split('=');
+
 
           if (kV[0] && kV[0] === 'SSL_VIRTUAL_HOST'){
             pair.SSL_VIRTUAL_HOST.push( kV[1]);
@@ -204,7 +189,7 @@ function extractDomainEmailPairs(data) {
           }
         }
 
-        if (pair.SSL_VIRTUAL_HOST && pair.SSL_EMAIL) {
+        if (pair.SSL_VIRTUAL_HOST.length && pair.SSL_EMAIL) {
           result.push(pair);
         }
       }
