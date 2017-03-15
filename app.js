@@ -151,8 +151,8 @@ function concatFiles(virtualHost, cb) {
   if(fs.existsSync(certPath) && fs.existsSync(privPath) ) {
     var dest = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/' + virtualHost[0] + '.pem';
     concat([
-      privPath,
-      certPath
+      certPath,
+      privPath
     ], dest, function (err) {
       if (err) return cb(err);
 
