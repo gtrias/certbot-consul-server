@@ -11,5 +11,10 @@
     },
     "consul": {
         "host": "127.0.0.1"
+    },
+    "settings": {
+      "domainWhitelist": [
+        "whatever.com"
+      ]
     }
 }

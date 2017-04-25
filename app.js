@@ -1,14 +1,14 @@
-var _                = require('underscore');
-var config           = require('config');
-var LE               = require('greenlock');
-var express          = require('express');
-var consulHost       = config.get('consul.host');
-var async            = require('async');
-var concat           = require('concat-files');
-var fs               = require('fs');
-var winston          = require('winston');
-var debug            = config.get('letsencrypt.debug');
-var consul           = require('consul')({
+var config          = require('config');
+var LE              = require('greenlock');
+var express         = require('express');
+var consulHost      = config.get('consul.host');
+var async           = require('async');
+var concat          = require('concat-files');
+var fs              = require('fs');
+var winston         = require('winston');
+var debug           = config.get('letsencrypt.debug');
+var domainWhiteList = config.get('settings.domainWhiteList');
+var consul          = require('consul')({
     host: consulHost
 });
 
@@ -43,7 +43,7 @@ if (config.get('letsencrypt.server') === 'production') {
   server = LE.productionServerUrl;
 }
 
-le = LE.create({
+var le = LE.create({
   server: server,                                          // or LE.productionServerUrl
   store: leStore,                                          // handles saving of config, accounts, and certificates
   challenges: { 'http-01': leChallenge },                  // handles /.well-known/acme-challege keys and tokens
@@ -71,7 +71,7 @@ function startWatcher(node) {
   var nodeName = node.Config.NodeName;
   var watch = consul.watch({ method: consul.catalog.service.list, options: {'node': nodeName}});
 
-  watch.on('change', function(data, res) {
+  watch.on('change', function(data) {
     var services = [];
 
     async.forEachOf(data, function(service, key, callback) {
@@ -136,18 +136,19 @@ function requestCertificates(data) {
     var virtualHost = configurationPairs[i].SSL_VIRTUAL_HOST;
     var email = configurationPairs[i].SSL_EMAIL;
 
-    // Check in-memory cache of certificates for the named domain
-    le.check({ domains: virtualHost }).then(
-      registerCertificate(virtualHost, email)
-    );
+    // Checking domain against whitelist
+    if( (new RegExp( '\\b' + domainWhiteList.join('\\b|\\b') + '\\b') ).test(virtualHost) ) {
+      // Check in-memory cache of certificates for the named domain
+      le.check({ domains: virtualHost }).then(
+        registerCertificate(virtualHost, email)
+      );
+    }
   }
 }
 
 function concatFiles(virtualHost, cb) {
   var certPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/fullchain.pem';
   var privPath = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/privkey.pem';
-  console.log(certPath);
-  console.log(privPath);
   if(fs.existsSync(certPath) && fs.existsSync(privPath) ) {
     var dest = config.get('letsencrypt.configDir') + '/live/' + virtualHost[0] + '/' + virtualHost[0] + '.pem';
     concat([
