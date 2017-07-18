@@ -102,9 +102,19 @@ function registerCertificate(virtualHosts, email) {
 
   // Check in-memory cache of certificates for the named domain
   le.check({ domains: virtualHosts }).then(function (checkResults) {
+
+    var args = {
+      domains:  virtualHosts,   // CHANGE TO YOUR DOMAIN (list for SANS)
+      email: email,
+      agreeTos:  true,           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
+      rsaKeySize: 2048,          // 2048 or higher
+      challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
+    };
+
+
     if (checkResults) {
       logger.info('Domains already registered %j', virtualHosts);
-      le.renew({}, checkResults).then( function (cert) {
+      le.renew(args, checkResults).then( function (cert) {
         logger.info('renewed cert for ' + cert.domains.join(", "));
       }, function(err) {
         logger.error('failed renewing cert: ' + err);
@@ -114,13 +124,7 @@ function registerCertificate(virtualHosts, email) {
     }
 
     // Register Certificate manually
-    le.register({
-      domains:  virtualHosts,   // CHANGE TO YOUR DOMAIN (list for SANS)
-      email: email,
-      agreeTos:  true,           // set to tosUrl string (or true) to pre-approve (and skip agreeToTerms)
-      rsaKeySize: 2048,          // 2048 or higher
-      challengeType: 'http-01'   // http-01, tls-sni-01, or dns-01
-    }).then(function (results) {
+    le.register(args).then(function (results) {
       logger.info('[Success]: Successfull generated the next certificate: %j', results);
 
       concatFiles(virtualHosts, function (err) {
@@ -152,7 +156,7 @@ function requestCertificates(data) {
 
     // Checking domain against whitelist
     if( (new RegExp( '\\b' + domainWhiteList.join('\\b|\\b') + '\\b') ).test(virtualHost) ) {
-      registerCertificate(virtualHost, email)
+      registerCertificate(virtualHost, email);
     }
   }
 }
