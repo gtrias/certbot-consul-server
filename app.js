@@ -104,7 +104,7 @@ function registerCertificate(virtualHosts, email) {
   le.check({ domains: virtualHosts }).then(function (checkResults) {
     if (checkResults) {
       logger.info('Domains already registered %j', virtualHosts);
-      le.renew({ duplicate: true }, checkResults).then( function (cert) {
+      le.renew({}, checkResults).then( function (cert) {
         logger.info('renewed cert for ' + cert.domains.join(", "));
       }, function(err) {
         logger.error('failed renewing cert: ' + err);
