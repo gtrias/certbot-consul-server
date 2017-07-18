@@ -19,11 +19,11 @@
     "config": "^1.24.0",
     "consul": "^0.27.0",
     "express": "^4.14.0",
-    "greenlock": "^2.1.12",
+    "greenlock": "2.x",
     "le-acme-core": "^2.0.9",
     "le-challenge-fs": "^2.0.8",
     "le-sni-auto": "^2.1.0",
-    "le-store-certbot": "^2.0.3",
+    "le-store-certbot": "2.x",
     "letsencrypt": "^2.1.8",
     "underscore": "^1.8.3",
     "winston": "^2.3.1"
