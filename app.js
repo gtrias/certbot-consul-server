@@ -5,6 +5,7 @@ var consulHost      = config.get('consul.host');
 var async           = require('async');
 var concat          = require('concat-files');
 var fs              = require('fs');
+var diff            = require('deep-diff').diff;
 var winston         = require('winston');
 var debug           = config.get('letsencrypt.debug');
 var domainWhiteList = config.get('settings.domainWhiteList');
@@ -17,6 +18,11 @@ var logger = new (winston.Logger)({
     new (winston.transports.Console)({timestamp : true})
   ]
 });
+
+// Checking if there's a difference in services array from the last one to avoid unneeded restarts and template generation
+function serviceColDiff(oldServices, services) {
+  return diff(oldServices, services);
+}
 
 // Storage Backend
 var leStore = require('le-store-certbot').create({
@@ -68,6 +74,8 @@ startListen();
 
 // Starting watcher
 function startWatcher(node) {
+  var oldServices = [];
+
   var nodeName = node.Config.NodeName;
   var watch = consul.watch({ method: consul.catalog.service.list, options: {'node': nodeName}});
 
@@ -77,6 +85,10 @@ function startWatcher(node) {
     async.forEachOf(data, function(service, key, callback) {
       consul.catalog.service.nodes(key, function(err, result) {
         if (err) throw err;
+
+        result.forEach(function (element, index) {
+          delete result[index].ModifyIndex;
+        })
 
         services.push({
           ID: key,
@@ -88,7 +100,12 @@ function startWatcher(node) {
     }, function (err) {
       if (err) return logger.error(err);
 
-      requestCertificates(services);
+      if (serviceColDiff(oldServices, services)) {
+        oldServices = Array.from(services)
+
+        return requestCertificates(services);
+      }
+
     });
 
   });

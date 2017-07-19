@@ -18,6 +18,7 @@
     "concat-files": "^0.1.1",
     "config": "^1.24.0",
     "consul": "^0.27.0",
+    "deep-diff": "^0.3.8",
     "express": "^4.14.0",
     "greenlock": "2.x",
     "le-acme-core": "^2.0.9",
