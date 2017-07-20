@@ -134,7 +134,7 @@ function registerCertificate(virtualHosts, email) {
       var renewArgs = Object.assign(args, {waitForRenewal: true});
       logger.info('Domains already registered %j', virtualHosts);
       le.renew(renewArgs, checkResults).then( function (cert) {
-        logger.info('renewed cert for ' + cert.domains.join(", "));
+        logger.info('renewed cert for ' + checkResults.domains.join(", "));
       }, function(err) {
         logger.error('failed renewing cert: ' + err);
       });
