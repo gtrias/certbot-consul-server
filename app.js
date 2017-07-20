@@ -27,6 +27,7 @@ function serviceColDiff(oldServices, services) {
 // Storage Backend
 var leStore = require('le-store-certbot').create({
   configDir: config.get('letsencrypt.configDir'),  // or /etc/letsencrypt or wherever
+  webrootPath: config.get('letsencrypt.webrootPath'),
   debug: debug
 });
 
@@ -130,8 +131,9 @@ function registerCertificate(virtualHosts, email) {
 
 
     if (checkResults) {
+      var renewArgs = Object.assign(args, {waitForRenewal: true});
       logger.info('Domains already registered %j', virtualHosts);
-      le.renew(args, checkResults).then( function (cert) {
+      le.renew(renewArgs, checkResults).then( function (cert) {
         logger.info('renewed cert for ' + cert.domains.join(", "));
       }, function(err) {
         logger.error('failed renewing cert: ' + err);

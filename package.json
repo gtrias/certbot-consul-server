@@ -4,6 +4,7 @@
   "description": "Certbot server requesting certficates to letsencrypt feeded with consul",
   "main": "app.js",
   "scripts": {
+    "start": "NODE_ENV=production node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -22,10 +23,9 @@
     "express": "^4.14.0",
     "greenlock": "2.x",
     "le-acme-core": "^2.0.9",
-    "le-challenge-fs": "^2.0.8",
+    "le-challenge-fs": "2.x",
     "le-sni-auto": "^2.1.0",
-    "le-store-certbot": "2.x",
-    "letsencrypt": "^2.1.8",
+    "le-store-certbot": "^2.0.5",
     "underscore": "^1.8.3",
     "winston": "^2.3.1"
   }
