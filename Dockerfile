@@ -1,15 +1,13 @@
-FROM node
+FROM gtrias/node-consul-template
 
 MAINTAINER Genar <genar@acs.li>
 
-RUN apt-get update && apt-get install -y libkrb5-dev && rm -rf /var/lib/apt/lists/*
-
-COPY . /app
-
 WORKDIR /app
 
-RUN npm install
+RUN echo "deb http://httpredir.debian.org/debian jessie-backports main non-free\ndeb-src http://httpredir.debian.org/debian jessie-backports main non-free" >> /etc/apt/sources.list.d/backports.list && \
+    apt-get update && \
+    apt-get install certbot -y -t jessie-backports && \
+    apt-get clean && \
+    mkdir -p /var/www/letsencrypt
 
-ENV NODE_ENV production
-
-ENTRYPOINT node app.js
+RUN git clone https://github.com/lukas2511/dehydrated.git
