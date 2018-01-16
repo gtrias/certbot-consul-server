@@ -1,10 +1,11 @@
+#!/bin/bash
 {% for service in data.Services %}
   {% for tag in service.nodes[0].ServiceTags %}
       {% set kvTag = tag |split("=") -%}
       {%- if kvTag[0] === 'SSL_VIRTUAL_HOST' -%}
       {%- if firstTag %},{% else %}
 
-      {% endif %}
+certbot certonly --renew-with-new-domains --keep-until-expiring --standalone --non-interactive --agree-tos --http-01-port=54321 -d {% endif %}
         {% set firstTag = true -%}
         {% set virtualHost = kvTag[1] %}{{ kvTag[1] }}{% endif %}
   {% endfor %}

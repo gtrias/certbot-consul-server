@@ -9,5 +9,3 @@ RUN echo "deb http://httpredir.debian.org/debian jessie-backports main non-free\
     apt-get install certbot -y -t jessie-backports && \
     apt-get clean && \
     mkdir -p /var/www/letsencrypt
-
-RUN git clone https://github.com/lukas2511/dehydrated.git

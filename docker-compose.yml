@@ -10,7 +10,6 @@ services:
         ports:
         - 54321:54321
         volumes:
-        - ./config:/etc/dehydrated/config
         - ./templates:/app/templates
         environment:
-          - 'NODE_CONFIG={"consul":{"host":"127.0.0.1"}, "templateGlobals": {"haproxy": {"httpPort": 80}}, "templates":[{"source":"templates/domains.txt.njk","path":"/etc/dehydrated/","filename":"domains.txt","command":"cat /etc/dehydrated/domains.txt && /app/dehydrated/dehydrated" }]}'
+          - 'NODE_CONFIG={"consul":{"host":"127.0.0.1"}, "templates":[{"source":"templates/domains.sh.njk","path":"/bin","filename":"domains.sh","command":"cat /bin/domains.sh" }]}'
