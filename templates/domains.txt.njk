@@ -1,0 +1,11 @@
+{% for service in data.Services %}
+  {% for tag in service.nodes[0].ServiceTags %}
+      {% set kvTag = tag |split("=") -%}
+      {%- if kvTag[0] === 'SSL_VIRTUAL_HOST' -%}
+      {%- if firstTag %},{% else %}
+
+      {% endif %}
+        {% set firstTag = true -%}
+        {% set virtualHost = kvTag[1] %}{{ kvTag[1] }}{% endif %}
+  {% endfor %}
+{% endfor %}

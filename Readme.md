@@ -1,16 +1,9 @@
 # cerbot-consul-server
 
-This srever listen to consul events and uses [node-letsencrypt](https://github.com/Daplie/node-letsencrypt) to request new certificates
-and launch a expressjs server to handle verification.
+This srever listen to consul events and uses [dehydrated](https://github.com/lukas2511/dehydrated) to request new certificates.
 
-## Install
-
-```bash
-npm i
-```
-
-## Run
+## Usage
 
 ```bash
-node app.js
+docker-compose up -d
 ```

@@ -5,15 +5,12 @@ services:
     consul-template-certbot:
         build:
             context: .
-            dockerfile: Dockerfile-haproxy
-        depends_on:
-        - consul
+            dockerfile: Dockerfile
         network_mode: host
         ports:
-        - 80:80
-        - 443:443
+        - 54321:54321
         volumes:
         - ./config:/etc/dehydrated/config
         - ./templates:/app/templates
         environment:
-          - 'NODE_CONFIG={"consul":{"host":"127.0.0.1"}, "templateGlobals": {"haproxy": {"httpPort": 80}}, "templates":[{"source":"templates/domains.txt.njk","path":"/etc/dehydrated/","filename":"domains.txt","command":"/app/dehydrated/dehydrated" }]}'
+          - 'NODE_CONFIG={"consul":{"host":"127.0.0.1"}, "templateGlobals": {"haproxy": {"httpPort": 80}}, "templates":[{"source":"templates/domains.txt.njk","path":"/etc/dehydrated/","filename":"domains.txt","command":"cat /etc/dehydrated/domains.txt && /app/dehydrated/dehydrated" }]}'
